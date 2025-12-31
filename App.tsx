@@ -2,45 +2,106 @@
 import React, { useState, useEffect } from 'react';
 import { 
   Search, TrendingUp, AlertTriangle, Rocket, LogOut, 
-  Activity, Clock, CheckCircle2, XCircle, Award
+  Activity, Clock, CheckCircle2, XCircle, Award, ShieldCheck,
+  Zap, PieChart, Layers, ChevronRight, BarChart3, Binary,
+  FileSpreadsheet, Download
 } from 'lucide-react';
 import { analyzeStock, discoverStocks } from './services/geminiService';
-import { AnalysisResult, User, DiscoveryStock, PriceBucket, SevenStepMetrics } from './types';
+import { AnalysisResult, User, DiscoveryStock, PriceBucket, InstitutionalMetrics } from './types';
 import TrajectoryChart from './components/TrajectoryChart';
 import AuthModal from './components/AuthModal';
 import LandingView from './components/LandingView';
 
-const SevenStepScorecard: React.FC<{ metrics: SevenStepMetrics }> = ({ metrics }) => {
-  const criteria = [
+const AlphaScorecard: React.FC<{ metrics: InstitutionalMetrics }> = ({ metrics }) => {
+  const quant = [
     { label: "P/E Ratio", value: metrics.peRatio, target: "< 20", pass: metrics.peRatio < 20 },
     { label: "ROIC", value: `${metrics.roic}%`, target: "> 15%", pass: metrics.roic > 15 },
     { label: "D/E Ratio", value: metrics.deRatio, target: "< 1", pass: metrics.deRatio < 1 },
     { label: "EPS CAGR", value: `${metrics.epsCAGR}%`, target: "> 10%", pass: metrics.epsCAGR > 10 },
     { label: "ROE", value: `${metrics.roe}%`, target: "> 15%", pass: metrics.roe > 15 },
+    { label: "Rev CAGR", value: `${metrics.revenueCAGR}%`, target: "> 15%", pass: metrics.revenueCAGR > 15 },
     { label: "EBIT Margin", value: `${metrics.ebitMargin}%`, target: "> 10%", pass: metrics.ebitMargin > 10 },
     { label: "Gross Margin", value: `${metrics.grossMargin}%`, target: "> 40%", pass: metrics.grossMargin > 40 },
   ];
 
+  const gov = [
+    { label: "Promoter Holding", value: `${metrics.promoterHolding}%`, target: "> 50%", pass: metrics.promoterHolding > 50 },
+    { label: "Pledged Shares", value: `${metrics.pledgedPercentage}%`, target: "< 10%", pass: metrics.pledgedPercentage < 10 },
+    { label: "FCF Status", value: metrics.fcfStatus, target: "Pos & Grow", pass: metrics.fcfStatus === 'Positive & Growing' },
+  ];
+
+  const qual = [
+    { label: "Ind. Tailwinds", score: metrics.industryTailwinds },
+    { label: "Comp. Moat", score: metrics.competitiveMoat },
+    { label: "Valuation Entry", score: metrics.valuationSafety },
+    { label: "Mgt Governance", score: metrics.managementGovernance },
+  ];
+
   return (
-    <div className="bg-[#0a111a] border border-white/5 rounded-[2.5rem] p-8 shadow-2xl">
-      <h3 className="text-xl font-black text-white uppercase tracking-tighter mb-6 flex items-center gap-3 italic underline decoration-emerald-500 decoration-2 underline-offset-8">
-        <Award className="w-6 h-6 text-emerald-500" /> Identify Stocks 7 Step
-      </h3>
-      <div className="grid grid-cols-1 gap-3">
-        {criteria.map((c, i) => (
-          <div key={i} className={`flex items-center justify-between p-4 rounded-2xl border transition-all ${c.pass ? 'bg-emerald-500/5 border-emerald-500/20' : 'bg-rose-500/5 border-rose-500/20'}`}>
-            <div className="flex-1">
-              <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest leading-none mb-1">{c.label}</p>
-              <p className={`text-xl font-black font-mono ${c.pass ? 'text-emerald-400' : 'text-rose-400'}`}>{c.value}</p>
-            </div>
-            <div className="text-right shrink-0">
-              <p className="text-[9px] font-bold text-slate-600 uppercase">Goal: {c.target}</p>
-              <div className="flex justify-end mt-1">
-                {c.pass ? <CheckCircle2 className="w-5 h-5 text-emerald-500" /> : <XCircle className="w-5 h-5 text-rose-500" />}
-              </div>
+    <div className="space-y-6">
+      <div className="bg-[#0a111a] border border-white/5 rounded-[2.5rem] p-8 shadow-2xl">
+        <h3 className="text-xl font-black text-white uppercase tracking-tighter mb-6 flex items-center gap-3 italic">
+          <Binary className="w-6 h-6 text-emerald-500" /> Alpha 14-Point Scan
+        </h3>
+        
+        <div className="space-y-8">
+          {/* Quantitative Matrix */}
+          <div>
+            <p className="text-[10px] font-black text-slate-600 uppercase tracking-widest mb-4 border-l-2 border-emerald-500 pl-2">Quantitative Matrix</p>
+            <div className="grid grid-cols-2 gap-3">
+              {quant.map((c, i) => (
+                <div key={i} className={`p-4 rounded-2xl border transition-all ${c.pass ? 'bg-emerald-500/5 border-emerald-500/10' : 'bg-rose-500/5 border-rose-500/10'}`}>
+                  <p className="text-[9px] font-black text-slate-500 uppercase leading-none mb-1">{c.label}</p>
+                  <p className={`text-lg font-black font-mono ${c.pass ? 'text-emerald-400' : 'text-rose-400'}`}>{c.value}</p>
+                  <div className="flex justify-between items-center mt-2 border-t border-white/5 pt-2">
+                    <span className="text-[8px] text-slate-600 font-bold uppercase">{c.target}</span>
+                    {c.pass ? <CheckCircle2 className="w-3 h-3 text-emerald-500" /> : <XCircle className="w-3 h-3 text-rose-500" />}
+                  </div>
+                </div>
+              ))}
             </div>
           </div>
-        ))}
+
+          {/* Governance & FCF */}
+          <div>
+            <p className="text-[10px] font-black text-slate-600 uppercase tracking-widest mb-4 border-l-2 border-blue-500 pl-2">Governance & Liquidity</p>
+            <div className="space-y-3">
+              {gov.map((c, i) => (
+                <div key={i} className={`flex items-center justify-between p-4 rounded-2xl border ${c.pass ? 'bg-blue-500/5 border-blue-500/10' : 'bg-rose-500/5 border-rose-500/10'}`}>
+                   <div>
+                    <p className="text-[9px] font-black text-slate-500 uppercase leading-none mb-1">{c.label}</p>
+                    <p className={`text-sm font-black ${c.pass ? 'text-blue-400' : 'text-rose-400'}`}>{c.value}</p>
+                  </div>
+                  <div className="text-right">
+                    <p className="text-[8px] font-bold text-slate-600 uppercase">{c.target}</p>
+                    {c.pass ? <CheckCircle2 className="w-4 h-4 text-blue-500 ml-auto" /> : <XCircle className="w-4 h-4 text-rose-500 ml-auto" />}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Qualitative Scorecards */}
+          <div>
+            <p className="text-[10px] font-black text-slate-600 uppercase tracking-widest mb-4 border-l-2 border-amber-500 pl-2">Institutional Qualitative</p>
+            <div className="space-y-4">
+              {qual.map((c, i) => (
+                <div key={i}>
+                  <div className="flex justify-between items-center mb-1">
+                    <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">{c.label}</span>
+                    <span className="text-xs font-black text-white">{c.score}%</span>
+                  </div>
+                  <div className="h-1.5 w-full bg-slate-900 rounded-full overflow-hidden">
+                    <div 
+                      className={`h-full transition-all duration-1000 ${c.score > 70 ? 'bg-emerald-500' : c.score > 40 ? 'bg-amber-500' : 'bg-rose-500'}`}
+                      style={{ width: `${c.score}%` }}
+                    />
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
       </div>
     </div>
   );
@@ -72,7 +133,7 @@ const App: React.FC = () => {
       setResult(data);
     } catch (e) {
       console.error(e);
-      setError("Analysis Node Error: Verify Ticker or API status.");
+      setError("Market Terminal Offline: Verify Node Connectivity.");
     } finally {
       setIsAnalyzing(false);
     }
@@ -86,22 +147,80 @@ const App: React.FC = () => {
       setDiscoveryResults(data);
     } catch (e) {
       console.error(e);
-      setError("Discovery Timeout.");
+      setError("Cloud Logic Exception: Re-scanning required.");
     } finally {
       setIsDiscovering(false);
     }
   };
 
-  const handleLogout = () => {
-    setUser(null);
-    localStorage.removeItem('pennystocks_user');
-    setResult(null);
-    setDiscoveryResults([]);
+  const downloadCSV = (data: string, filename: string) => {
+    const blob = new Blob([data], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+    const url = URL.createObjectURL(blob);
+    link.setAttribute('href', url);
+    link.setAttribute('download', filename);
+    link.style.visibility = 'hidden';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
   };
+
+  const exportDiscoveryToCSV = () => {
+    if (discoveryResults.length === 0) return;
+    const headers = ['Symbol', 'Name', 'Price (INR)', 'Exchange', 'Alpha Pass Count (/14)', 'Segment'];
+    const rows = discoveryResults.map(s => [
+      s.symbol,
+      `"${s.name}"`,
+      s.price,
+      s.exchange,
+      s.passCount,
+      `"${s.segment}"`
+    ]);
+    const csvContent = [headers.join(','), ...rows.map(r => r.join(','))].join('\n');
+    downloadCSV(csvContent, `alpha_scan_discovery_${new Date().getTime()}.csv`);
+  };
+
+  const exportAnalysisToCSV = () => {
+    if (!result || !symbol) return;
+    const m = result.metrics;
+    const data = [
+      ['Analysis Report', `Ticker: ${symbol}`],
+      ['Sector', result.sector],
+      ['Verdict', result.verdict],
+      [''],
+      ['Alpha 14-Point Scan Metrics'],
+      ['P/E Ratio', m.peRatio],
+      ['ROIC (%)', m.roic],
+      ['Debt-to-Equity', m.deRatio],
+      ['EPS 5Y CAGR (%)', m.epsCAGR],
+      ['ROE (%)', m.roe],
+      ['Revenue CAGR (%)', m.revenueCAGR],
+      ['EBIT Margin (%)', m.ebitMargin],
+      ['Gross Margin (%)', m.grossMargin],
+      ['Free Cash Flow Status', m.fcfStatus],
+      ['Promoter Holding (%)', m.promoterHolding],
+      ['Pledged Percentage (%)', m.pledgedPercentage],
+      ['Industry Tailwinds Score', m.industryTailwinds],
+      ['Competitive Moat Score', m.competitiveMoat],
+      ['Valuation Safety Score', m.valuationSafety],
+      ['Management Governance Score', m.managementGovernance],
+      [''],
+      ['Growth Trajectory Projections'],
+      ['Year', 'Price Target (INR)', 'Label'],
+      ...result.trajectory.map(t => [t.year, t.price, t.label])
+    ];
+    const csvContent = data.map(r => r.join(',')).join('\n');
+    downloadCSV(csvContent, `${symbol}_institutional_audit_${new Date().getTime()}.csv`);
+  };
+
+  const segments = discoveryResults.reduce((acc, curr) => {
+    if (!acc[curr.segment]) acc[curr.segment] = [];
+    acc[curr.segment].push(curr);
+    return acc;
+  }, {} as Record<string, DiscoveryStock[]>);
 
   return (
     <div className="min-h-screen bg-[#05090f] text-slate-200 selection:bg-emerald-500/30">
-      {/* Auth Layer */}
       {showAuth && (
         <AuthModal 
           onClose={() => setShowAuth(false)} 
@@ -132,7 +251,7 @@ const App: React.FC = () => {
                     value={symbol}
                     onChange={(e) => setSymbol(e.target.value)}
                     onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
-                    placeholder="Search Ticker (e.g. TATAELXSI)..."
+                    placeholder="Search Institutional Ticker..."
                     className="w-full bg-slate-900 border border-white/10 rounded-xl py-2 px-10 text-sm focus:border-emerald-500 outline-none transition-all"
                   />
                   <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500" />
@@ -140,10 +259,11 @@ const App: React.FC = () => {
               </div>
 
               <div className="flex items-center gap-4">
-                <span className="text-[10px] font-black text-emerald-500 uppercase tracking-widest hidden sm:block">
-                  Terminal: {user.email.split('@')[0]}
-                </span>
-                <button onClick={handleLogout} className="p-2 text-slate-500 hover:text-rose-400 transition-colors">
+                <div className="text-right hidden sm:block">
+                  <p className="text-[8px] font-black text-emerald-500 uppercase tracking-widest leading-none">Status: Connected</p>
+                  <p className="text-[10px] font-black text-white uppercase mt-1">{user.email.split('@')[0]}</p>
+                </div>
+                <button onClick={() => { setUser(null); localStorage.removeItem('pennystocks_user'); }} className="p-2 text-slate-500 hover:text-rose-400 transition-colors">
                   <LogOut className="w-5 h-5" />
                 </button>
               </div>
@@ -152,20 +272,21 @@ const App: React.FC = () => {
 
           <main className="max-w-7xl mx-auto p-6">
             {!result && !isAnalyzing && discoveryResults.length === 0 && (
-              <div className="py-20 text-center space-y-8">
-                <div className="inline-flex items-center gap-2 bg-emerald-500/5 border border-emerald-500/10 px-4 py-1 rounded-full">
-                  <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-                  <span className="text-[9px] font-black text-emerald-500 uppercase tracking-[0.3em]">Neural Scanning Active</span>
+              <div className="py-20 text-center space-y-12">
+                <div className="inline-flex items-center gap-3 bg-[#0a111a] border border-white/5 px-6 py-2 rounded-full shadow-2xl">
+                  <Activity className="w-4 h-4 text-emerald-500 animate-pulse" />
+                  <span className="text-[10px] font-black text-slate-300 uppercase tracking-[0.4em]">Multi-Step Alpha Scanning Engine</span>
                 </div>
-                <h2 className="text-6xl md:text-8xl font-black text-white mb-6 uppercase tracking-tighter italic">Terminal</h2>
-                <div className="flex flex-wrap justify-center gap-4">
+                <h2 className="text-7xl md:text-9xl font-black text-white uppercase tracking-tighter italic">Alpha Node</h2>
+                <div className="flex flex-wrap justify-center gap-4 max-w-2xl mx-auto">
                   {(['under20', 'under50', 'under100', 'multibagger'] as PriceBucket[]).map(b => (
                     <button 
                       key={b} 
                       onClick={() => handleDiscovery(b)} 
-                      className="px-8 py-4 bg-slate-900 border border-white/10 rounded-2xl text-[10px] font-black uppercase tracking-widest hover:border-emerald-500 hover:text-emerald-500 transition-all hover:-translate-y-1"
+                      className="group relative px-8 py-5 bg-slate-900 border border-white/10 rounded-3xl text-[10px] font-black uppercase tracking-widest transition-all hover:-translate-y-2 hover:border-emerald-500/50"
                     >
-                      {b.replace('under', '₹')} Alpha Scan
+                      <div className="absolute inset-0 bg-emerald-500 opacity-0 group-hover:opacity-5 blur-xl transition-opacity rounded-3xl" />
+                      <span className="relative z-10">{b.replace('under', '₹')} Radar Scan</span>
                     </button>
                   ))}
                 </div>
@@ -173,32 +294,53 @@ const App: React.FC = () => {
             )}
 
             {isDiscovering && (
-              <div className="py-40 text-center animate-pulse">
-                <Clock className="w-16 h-16 text-emerald-500 mx-auto mb-6" />
-                <p className="font-black uppercase tracking-[0.4em] text-slate-500 text-sm">Deep Scan In Progress...</p>
+              <div className="py-40 text-center space-y-8">
+                <div className="w-24 h-24 border-t-4 border-emerald-500 border-r-4 border-transparent rounded-full animate-spin mx-auto mb-6 shadow-[0_0_80px_rgba(16,185,129,0.1)]" />
+                <p className="font-black uppercase tracking-[0.5em] text-slate-500 text-sm animate-pulse">Scanning Exchange Nodes...</p>
               </div>
             )}
 
             {discoveryResults.length > 0 && (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 animate-in fade-in slide-in-from-bottom-8 duration-500">
-                {discoveryResults.map((s, i) => (
-                  <div key={i} onClick={() => handleSearch(s.symbol)} className="bg-slate-900/50 border border-white/5 p-8 rounded-[2.5rem] hover:border-emerald-500/50 hover:bg-slate-900 transition-all cursor-pointer group relative overflow-hidden">
-                    <div className="absolute top-0 right-0 p-4 opacity-5 group-hover:opacity-10 transition-opacity">
-                      <TrendingUp className="w-24 h-24 text-white" />
+              <div className="space-y-16 animate-in fade-in duration-700">
+                <div className="flex justify-between items-center mb-8 bg-[#0a111a] p-6 rounded-3xl border border-white/5">
+                  <h3 className="text-lg font-black text-white uppercase italic tracking-tighter">Market Discovery Results</h3>
+                  <button 
+                    onClick={exportDiscoveryToCSV}
+                    className="flex items-center gap-2 px-6 py-3 bg-emerald-500/10 hover:bg-emerald-500 text-emerald-500 hover:text-slate-900 border border-emerald-500/20 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all group"
+                  >
+                    <FileSpreadsheet className="w-4 h-4" />
+                    Export to Excel (.csv)
+                  </button>
+                </div>
+
+                {Object.entries(segments).map(([segment, stocks]) => (
+                  <div key={segment} className="space-y-6">
+                    <div className="flex items-center gap-4 mb-4">
+                      <div className="h-px flex-1 bg-white/5" />
+                      <h3 className="text-sm font-black text-emerald-500 uppercase tracking-[0.3em] flex items-center gap-3">
+                        <Layers className="w-4 h-4" /> {segment} Segment
+                      </h3>
+                      <div className="h-px flex-1 bg-white/5" />
                     </div>
-                    <div className="flex justify-between items-start mb-6 relative z-10">
-                      <div>
-                        <h3 className="text-3xl font-black text-white group-hover:text-emerald-400 uppercase tracking-tighter italic transition-colors">{s.symbol}</h3>
-                        <p className="text-[10px] text-slate-600 font-bold uppercase tracking-widest">{s.name}</p>
-                      </div>
-                      <span className="bg-emerald-500/10 text-emerald-400 px-3 py-1 rounded-lg text-[9px] font-black border border-emerald-500/20">{s.exchange}</span>
-                    </div>
-                    <div className="flex items-end justify-between relative z-10">
-                      <span className="text-4xl font-black text-white font-mono">₹{s.price}</span>
-                      <div className="text-right">
-                        <p className="text-[9px] text-slate-600 font-black uppercase tracking-widest leading-none mb-1">7-Step Score</p>
-                        <p className="text-2xl font-black text-emerald-500">{s.passCount}/7</p>
-                      </div>
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                      {stocks.map((s, i) => (
+                        <div key={i} onClick={() => handleSearch(s.symbol)} className="bg-[#0a111a] border border-white/5 p-8 rounded-[2.5rem] hover:border-emerald-500/40 hover:bg-slate-900/50 transition-all cursor-pointer group relative overflow-hidden">
+                           <div className="flex justify-between items-start mb-6">
+                            <div>
+                              <h3 className="text-3xl font-black text-white group-hover:text-emerald-400 transition-colors uppercase italic tracking-tighter">{s.symbol}</h3>
+                              <p className="text-[10px] text-slate-600 font-bold uppercase tracking-widest">{s.name}</p>
+                            </div>
+                            <span className="bg-emerald-500/10 text-emerald-400 px-3 py-1 rounded-lg text-[9px] font-black border border-emerald-500/20">{s.exchange}</span>
+                          </div>
+                          <div className="flex items-end justify-between">
+                            <span className="text-4xl font-black text-white font-mono">₹{s.price}</span>
+                            <div className="text-right">
+                              <p className="text-[9px] text-slate-600 font-black uppercase mb-1">Alpha Pass</p>
+                              <p className="text-2xl font-black text-emerald-500">{s.passCount}/14</p>
+                            </div>
+                          </div>
+                        </div>
+                      ))}
                     </div>
                   </div>
                 ))}
@@ -207,70 +349,80 @@ const App: React.FC = () => {
 
             {isAnalyzing && (
               <div className="py-40 text-center">
-                <div className="w-20 h-20 border-4 border-emerald-500 border-t-transparent rounded-full animate-spin mx-auto mb-10 shadow-[0_0_50px_rgba(16,185,129,0.2)]" />
-                <h3 className="text-3xl font-black text-white uppercase italic tracking-tighter">Deep Diving Financials...</h3>
-                <p className="text-slate-500 mt-4 font-bold uppercase tracking-widest text-xs animate-pulse">Running Identify Stocks 7 Step Algorithm</p>
+                <Binary className="w-20 h-20 text-emerald-500 mx-auto mb-8 animate-bounce" />
+                <h3 className="text-3xl font-black text-white uppercase italic tracking-tighter">Running Institutional Audit...</h3>
+                <p className="text-slate-500 mt-4 font-bold uppercase tracking-widest text-xs">Applying 14-Point Alpha Validation Protocol</p>
               </div>
             )}
 
             {result && (
-              <div className="space-y-12 animate-in fade-in slide-in-from-bottom-4 duration-1000">
+              <div className="space-y-12 animate-in fade-in slide-in-from-bottom-8 duration-1000">
                 <div className="flex flex-col lg:flex-row gap-10">
                   <div className="flex-1 space-y-10">
-                    <div className="flex flex-wrap items-center justify-between gap-6 bg-[#0a111a] p-8 rounded-[2.5rem] border border-white/5">
-                      <div className="space-y-1">
-                        <h2 className="text-7xl font-black text-white tracking-tighter italic uppercase">{symbol}</h2>
-                        <p className="text-sm font-black text-slate-500 uppercase tracking-widest flex items-center gap-2">
-                          <Activity className="w-4 h-4 text-emerald-500" /> Sector: {result.sector}
-                        </p>
+                    <div className="bg-[#0a111a] p-10 rounded-[3rem] border border-white/5 relative overflow-hidden">
+                      <div className="absolute top-0 right-0 p-12 opacity-5 pointer-events-none">
+                        <TrendingUp className="w-64 h-64 text-white" />
                       </div>
-                      <div className={`px-10 py-5 rounded-2xl text-xl font-black uppercase border-2 flex flex-col items-center ${result.verdict === 'Bullish' ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-400' : 'bg-rose-500/10 border-rose-500/30 text-rose-400'}`}>
-                        <span className="text-[10px] tracking-[0.3em] mb-1">Verdict</span>
-                        {result.verdict}
+                      <div className="relative z-10 flex flex-wrap items-center justify-between gap-8">
+                        <div className="space-y-2">
+                          <h2 className="text-8xl font-black text-white tracking-tighter italic uppercase leading-none">{symbol}</h2>
+                          <div className="flex items-center gap-4">
+                            <span className="text-xs font-black text-emerald-500 uppercase tracking-[0.2em] bg-emerald-500/5 px-3 py-1 rounded-lg border border-emerald-500/10">Sector: {result.sector}</span>
+                            <span className="text-xs font-black text-slate-500 uppercase tracking-widest">Node ID: {Math.random().toString(16).slice(2, 10)}</span>
+                          </div>
+                        </div>
+                        <div className="flex flex-col gap-4 items-end">
+                          <div className={`px-12 py-6 rounded-[2rem] border-2 shadow-2xl ${result.verdict === 'Bullish' ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-400' : 'bg-rose-500/10 border-rose-500/30 text-rose-400'}`}>
+                            <p className="text-[10px] font-black uppercase tracking-[0.5em] mb-2 opacity-50">Validation Verdict</p>
+                            <p className="text-3xl font-black italic">{result.verdict}</p>
+                          </div>
+                          <button 
+                            onClick={exportAnalysisToCSV}
+                            className="flex items-center gap-2 px-8 py-4 bg-slate-900 hover:bg-slate-800 text-white border border-white/10 rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all"
+                          >
+                            <Download className="w-4 h-4 text-emerald-500" />
+                            Download Audit Report
+                          </button>
+                        </div>
                       </div>
                     </div>
                     
                     <TrajectoryChart data={result.trajectory} />
                     
-                    <div className="bg-slate-900/40 p-12 rounded-[2.5rem] border border-white/5 relative overflow-hidden">
-                       <div className="absolute top-0 right-0 p-8 opacity-5">
-                          <Rocket className="w-32 h-32 text-white" />
-                       </div>
-                       <h3 className="text-xs font-black text-slate-500 uppercase tracking-[0.4em] mb-8 flex items-center gap-3">
-                        <Activity className="w-5 h-5 text-emerald-500" /> Neural Analysis Summary
+                    <div className="bg-slate-900/40 p-12 rounded-[3rem] border border-white/5 relative">
+                       <h3 className="text-xs font-black text-slate-500 uppercase tracking-[0.5em] mb-8 flex items-center gap-3">
+                        <Binoculars className="w-5 h-5 text-emerald-500" /> Professional Grade Summary
                        </h3>
-                       <p className="text-xl text-slate-300 leading-relaxed font-medium italic relative z-10">{result.summary}</p>
+                       <p className="text-2xl text-slate-300 leading-relaxed font-medium italic relative z-10">{result.summary}</p>
                     </div>
                   </div>
 
-                  <div className="lg:w-[400px] shrink-0 space-y-8">
-                    <SevenStepScorecard metrics={result.metrics} />
+                  <div className="lg:w-[420px] shrink-0">
+                    <AlphaScorecard metrics={result.metrics} />
                     
-                    <div className="bg-[#0a111a] p-8 rounded-[2.5rem] border border-white/5">
-                      <h3 className="text-xs font-black text-slate-500 uppercase tracking-[0.3em] mb-8">Bullish Catalysts</h3>
-                      <div className="space-y-6">
-                        {result.catalysts.map((c, i) => (
-                          <div key={i} className="flex gap-4 text-sm font-bold text-slate-400 group">
-                            <div className="mt-1 shrink-0">
-                              <CheckCircle2 className="w-5 h-5 text-emerald-500 group-hover:scale-125 transition-transform" />
+                    <div className="mt-8 space-y-4">
+                       <div className="bg-emerald-500/5 p-8 rounded-[2.5rem] border border-emerald-500/10">
+                        <h3 className="text-xs font-black text-emerald-500 uppercase tracking-[0.3em] mb-6 flex items-center gap-2"><Zap className="w-4 h-4" /> Growth Catalysts</h3>
+                        <div className="space-y-4">
+                          {result.catalysts.map((c, i) => (
+                            <div key={i} className="flex gap-4 text-xs font-bold text-slate-400 leading-relaxed">
+                              <div className="mt-1 w-1.5 h-1.5 rounded-full bg-emerald-500 shrink-0" />
+                              {c}
                             </div>
-                            <span className="leading-relaxed">{c}</span>
-                          </div>
-                        ))}
+                          ))}
+                        </div>
                       </div>
-                    </div>
 
-                    <div className="bg-rose-500/5 p-8 rounded-[2.5rem] border border-rose-500/10">
-                      <h3 className="text-xs font-black text-rose-500/50 uppercase tracking-[0.3em] mb-8">Risk Factors</h3>
-                      <div className="space-y-6">
-                        {result.risks.map((r, i) => (
-                          <div key={i} className="flex gap-4 text-sm font-bold text-slate-400">
-                            <div className="mt-1 shrink-0">
-                              <AlertTriangle className="w-5 h-5 text-rose-500/50" />
+                      <div className="bg-rose-500/5 p-8 rounded-[2.5rem] border border-rose-500/10">
+                        <h3 className="text-xs font-black text-rose-500/50 uppercase tracking-[0.3em] mb-6 flex items-center gap-2"><AlertTriangle className="w-4 h-4" /> Risk Assessment</h3>
+                        <div className="space-y-4">
+                          {result.risks.map((r, i) => (
+                            <div key={i} className="flex gap-4 text-xs font-bold text-slate-500 leading-relaxed italic">
+                              <div className="mt-1.5 w-1.5 h-1.5 bg-rose-500/50 shrink-0 rotate-45" />
+                              {r}
                             </div>
-                            <span className="leading-relaxed italic">{r}</span>
-                          </div>
-                        ))}
+                          ))}
+                        </div>
                       </div>
                     </div>
                   </div>
@@ -279,13 +431,11 @@ const App: React.FC = () => {
             )}
 
             {error && (
-              <div className="max-w-md mx-auto mt-20 bg-rose-500/5 border border-rose-500/20 p-12 rounded-[3rem] text-center shadow-2xl">
-                <div className="bg-rose-500/10 w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-6">
-                  <AlertTriangle className="w-10 h-10 text-rose-500" />
-                </div>
-                <h3 className="text-2xl font-black text-white uppercase tracking-tighter mb-3 italic">Terminal Error</h3>
-                <p className="text-slate-400 text-sm font-medium leading-relaxed mb-8">{error}</p>
-                <button onClick={() => setError(null)} className="w-full py-4 bg-rose-500 hover:bg-rose-600 text-white rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all shadow-xl shadow-rose-500/20">Restart Engine</button>
+              <div className="max-w-md mx-auto mt-20 bg-rose-500/5 border border-rose-500/10 p-12 rounded-[3rem] text-center">
+                <AlertTriangle className="w-12 h-12 text-rose-500 mx-auto mb-6" />
+                <h3 className="text-2xl font-black text-white uppercase tracking-tighter mb-4 italic">Node Fault</h3>
+                <p className="text-slate-400 text-sm font-medium leading-relaxed">{error}</p>
+                <button onClick={() => setError(null)} className="mt-10 w-full py-4 bg-rose-500 text-white rounded-2xl text-[10px] font-black uppercase tracking-widest shadow-xl shadow-rose-500/20">Re-initialize</button>
               </div>
             )}
           </main>
@@ -294,5 +444,9 @@ const App: React.FC = () => {
     </div>
   );
 };
+
+const Binoculars = (props: any) => (
+  <svg {...props} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M8 22a2 2 0 1 0 0-4 2 2 0 0 0 0 4Z"/><path d="M16 22a2 2 0 1 0 0-4 2 2 0 0 0 0 4Z"/><path d="M7 10V2a1 1 0 0 1 1-1h8a1 1 0 0 1 1 1v8"/><path d="M4 14V9a1 1 0 0 1 1-1h14a1 1 0 0 1 1 1v5"/><path d="M8 14h8"/><path d="M12 14v4"/><path d="M12 2v2"/><path d="M9 18l-3 4"/><path d="M15 18l3 4"/></svg>
+);
 
 export default App;
