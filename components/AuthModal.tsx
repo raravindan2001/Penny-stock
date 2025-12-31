@@ -24,18 +24,18 @@ const AuthModal: React.FC<AuthModalProps> = ({ onClose, onLogin, initialMode = '
     setError(null);
     setLoading(true);
     
-    // Simulate API delay for institutional feel
+    // Simulate API delay
     setTimeout(() => {
       setLoading(false);
       
       if (password.length < 6) {
-        setError('Security Protocol Error: Password complexity requirements not met (min 6 chars).');
+        setError('Security Error: Password must be at least 6 characters.');
         return;
       }
       
       onLogin({ email });
       onClose();
-    }, 1200);
+    }, 800);
   };
 
   return (
@@ -58,19 +58,19 @@ const AuthModal: React.FC<AuthModalProps> = ({ onClose, onLogin, initialMode = '
                   setMode(m);
                   setError(null);
                 }}
-                className={`text-[10px] font-black uppercase tracking-[0.2em] px-6 py-2 rounded-full border transition-all ${mode === m ? 'bg-emerald-500 border-emerald-500 text-slate-900 shadow-lg shadow-emerald-500/20' : 'border-slate-800 text-slate-600 hover:border-slate-700'}`}
+                className={`text-[10px] font-black uppercase tracking-[0.2em] px-8 py-2.5 rounded-full border transition-all ${mode === m ? 'bg-emerald-500 border-emerald-500 text-slate-900 shadow-lg shadow-emerald-500/20' : 'border-slate-800 text-slate-600 hover:border-slate-700'}`}
               >
-                {m === 'signin' ? 'Institutional Log In' : 'Create Access Key'}
+                {m === 'signin' ? 'Sign In' : 'Sign Up'}
               </button>
             ))}
           </div>
 
           <h2 className="text-3xl font-black text-white tracking-tighter uppercase">
-            {mode === 'signin' ? 'Terminal Entry' : 'Node Registration'}
+            {mode === 'signin' ? 'Sign In' : 'Sign Up'}
           </h2>
           
           <p className="text-slate-500 mt-3 text-sm font-medium leading-relaxed max-w-[280px] mx-auto">
-            Authorized access to Lau- PennyStocks Institutional Data Engine v4.2
+            Access your Lau- PennyStocks account to track NSE & BSE trajectories.
           </p>
         </div>
 
@@ -88,7 +88,7 @@ const AuthModal: React.FC<AuthModalProps> = ({ onClose, onLogin, initialMode = '
               required
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              placeholder="operator@terminal.exe"
+              placeholder="Email Address"
               className="w-full bg-slate-950 border-2 border-slate-800/50 rounded-2xl py-4 pl-14 pr-6 text-sm font-bold text-white focus:border-emerald-500/50 focus:ring-0 outline-none transition-all group-hover:border-slate-700 placeholder:text-slate-800"
             />
           </div>
@@ -100,7 +100,7 @@ const AuthModal: React.FC<AuthModalProps> = ({ onClose, onLogin, initialMode = '
               required
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              placeholder="Enter secure key..."
+              placeholder="Password"
               className="w-full bg-slate-950 border-2 border-slate-800/50 rounded-2xl py-4 pl-14 pr-14 text-sm font-bold text-white focus:border-emerald-500/50 focus:ring-0 outline-none transition-all group-hover:border-slate-700 placeholder:text-slate-800"
             />
             <button
@@ -116,13 +116,13 @@ const AuthModal: React.FC<AuthModalProps> = ({ onClose, onLogin, initialMode = '
             disabled={loading}
             className="w-full bg-emerald-500 hover:bg-emerald-400 text-slate-900 font-black py-5 rounded-2xl shadow-xl shadow-emerald-500/10 transition-all hover:-translate-y-1 active:scale-95 disabled:opacity-50 flex items-center justify-center gap-3 text-lg tracking-tight uppercase"
           >
-            {loading ? <Loader2 className="w-6 h-6 animate-spin" /> : (mode === 'signin' ? 'Authorize Terminal' : 'Register Operator')}
+            {loading ? <Loader2 className="w-6 h-6 animate-spin" /> : (mode === 'signin' ? 'Sign In' : 'Sign Up')}
           </button>
         </form>
 
         <div className="mt-10 pt-8 border-t border-slate-900 flex flex-col items-center gap-3">
           <p className="text-[9px] text-slate-700 text-center uppercase tracking-[0.3em] font-black max-w-[250px] leading-relaxed">
-            Encrypted End-to-End Tunnel Active <br/> Node: NSE-MUM-042
+            Secure Connection Active <br/> NSE & BSE Market Hub
           </p>
         </div>
       </div>
