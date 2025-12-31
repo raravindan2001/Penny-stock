@@ -47,6 +47,8 @@ export interface DiscoveryStock {
 
 export interface User {
   email: string;
+  isPro?: boolean;
+  trialExpiresAt?: number;
 }
 
 export type PriceBucket = 'under20' | 'under50' | 'under100' | 'multibagger';

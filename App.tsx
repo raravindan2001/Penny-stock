@@ -4,13 +4,18 @@ import {
   Search, TrendingUp, AlertTriangle, Rocket, LogOut, 
   Activity, Clock, CheckCircle2, XCircle, Award, ShieldCheck,
   Zap, PieChart, Layers, ChevronRight, BarChart3, Binary,
-  FileSpreadsheet, Download
+  FileSpreadsheet, Download, Sparkles, Crown, Timer
 } from 'lucide-react';
 import { analyzeStock, discoverStocks } from './services/geminiService';
 import { AnalysisResult, User, DiscoveryStock, PriceBucket, InstitutionalMetrics } from './types';
 import TrajectoryChart from './components/TrajectoryChart';
 import AuthModal from './components/AuthModal';
 import LandingView from './components/LandingView';
+import SubscriptionModal from './components/SubscriptionModal';
+
+const Binoculars = (props: any) => (
+  <svg {...props} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M8 22a2 2 0 1 0 0-4 2 2 0 0 0 0 4Z"/><path d="M16 22a2 2 0 1 0 0-4 2 2 0 0 0 0 4Z"/><path d="M7 10V2a1 1 0 0 1 1-1h8a1 1 0 0 1 1 1v8"/><path d="M4 14V9a1 1 0 0 1 1-1h14a1 1 0 0 1 1 1v5"/><path d="M8 14h8"/><path d="M12 14v4"/><path d="M12 2v2"/><path d="M9 18l-3 4"/><path d="M15 18l3 4"/></svg>
+);
 
 const AlphaScorecard: React.FC<{ metrics: InstitutionalMetrics }> = ({ metrics }) => {
   const quant = [
@@ -45,7 +50,6 @@ const AlphaScorecard: React.FC<{ metrics: InstitutionalMetrics }> = ({ metrics }
         </h3>
         
         <div className="space-y-8">
-          {/* Quantitative Matrix */}
           <div>
             <p className="text-[10px] font-black text-slate-600 uppercase tracking-widest mb-4 border-l-2 border-emerald-500 pl-2">Quantitative Matrix</p>
             <div className="grid grid-cols-2 gap-3">
@@ -62,7 +66,6 @@ const AlphaScorecard: React.FC<{ metrics: InstitutionalMetrics }> = ({ metrics }
             </div>
           </div>
 
-          {/* Governance & FCF */}
           <div>
             <p className="text-[10px] font-black text-slate-600 uppercase tracking-widest mb-4 border-l-2 border-blue-500 pl-2">Governance & Liquidity</p>
             <div className="space-y-3">
@@ -81,7 +84,6 @@ const AlphaScorecard: React.FC<{ metrics: InstitutionalMetrics }> = ({ metrics }
             </div>
           </div>
 
-          {/* Qualitative Scorecards */}
           <div>
             <p className="text-[10px] font-black text-slate-600 uppercase tracking-widest mb-4 border-l-2 border-amber-500 pl-2">Institutional Qualitative</p>
             <div className="space-y-4">
@@ -116,11 +118,14 @@ const App: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [user, setUser] = useState<User | null>(null);
   const [showAuth, setShowAuth] = useState(false);
+  const [showSubscription, setShowSubscription] = useState(false);
 
   useEffect(() => {
     const saved = localStorage.getItem('pennystocks_user');
     if (saved) setUser(JSON.parse(saved));
   }, []);
+
+  const isProAccess = user?.isPro || (user?.trialExpiresAt && user.trialExpiresAt > Date.now());
 
   const handleSearch = async (target?: string) => {
     const s = target || symbol;
@@ -166,6 +171,10 @@ const App: React.FC = () => {
   };
 
   const exportDiscoveryToCSV = () => {
+    if (!isProAccess) {
+      setShowSubscription(true);
+      return;
+    }
     if (discoveryResults.length === 0) return;
     const headers = ['Symbol', 'Name', 'Price (INR)', 'Exchange', 'Alpha Pass Count (/14)', 'Segment'];
     const rows = discoveryResults.map(s => [
@@ -181,6 +190,10 @@ const App: React.FC = () => {
   };
 
   const exportAnalysisToCSV = () => {
+    if (!isProAccess) {
+      setShowSubscription(true);
+      return;
+    }
     if (!result || !symbol) return;
     const m = result.metrics;
     const data = [
@@ -213,11 +226,38 @@ const App: React.FC = () => {
     downloadCSV(csvContent, `${symbol}_institutional_audit_${new Date().getTime()}.csv`);
   };
 
+  const handleProSuccess = () => {
+    if (user) {
+      const updatedUser = { ...user, isPro: true, trialExpiresAt: undefined };
+      setUser(updatedUser);
+      localStorage.setItem('pennystocks_user', JSON.stringify(updatedUser));
+      setShowSubscription(false);
+    }
+  };
+
+  const handleTrialStart = () => {
+    if (user) {
+      const twoDaysInMs = 2 * 24 * 60 * 60 * 1000;
+      const updatedUser = { ...user, trialExpiresAt: Date.now() + twoDaysInMs };
+      setUser(updatedUser);
+      localStorage.setItem('pennystocks_user', JSON.stringify(updatedUser));
+      setShowSubscription(false);
+    }
+  };
+
   const segments = discoveryResults.reduce((acc, curr) => {
     if (!acc[curr.segment]) acc[curr.segment] = [];
     acc[curr.segment].push(curr);
     return acc;
   }, {} as Record<string, DiscoveryStock[]>);
+
+  const getTrialRemainingText = () => {
+    if (!user?.trialExpiresAt) return null;
+    const diff = user.trialExpiresAt - Date.now();
+    if (diff <= 0) return "Trial Expired";
+    const hours = Math.floor(diff / (1000 * 60 * 60));
+    return `${hours}h left in Tour`;
+  };
 
   return (
     <div className="min-h-screen bg-[#05090f] text-slate-200 selection:bg-emerald-500/30">
@@ -232,6 +272,15 @@ const App: React.FC = () => {
         />
       )}
 
+      {showSubscription && (
+        <SubscriptionModal 
+          onClose={() => setShowSubscription(false)} 
+          onSuccess={handleProSuccess} 
+          onTrialStart={handleTrialStart}
+          userHasTrialed={!!user?.trialExpiresAt}
+        />
+      )}
+
       {!user ? (
         <LandingView onGetStarted={() => setShowAuth(true)} />
       ) : (
@@ -243,6 +292,16 @@ const App: React.FC = () => {
                   <Rocket className="w-5 h-5 text-slate-900" />
                 </div>
                 <h1 className="text-xl font-black tracking-tighter text-white italic uppercase">LAU-PENNYSTOCKS.IN</h1>
+                {user.isPro && (
+                  <span className="bg-amber-500/10 text-amber-500 border border-amber-500/20 px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest flex items-center gap-1.5 ml-2">
+                    <Crown className="w-3 h-3" /> PRO
+                  </span>
+                )}
+                {!user.isPro && user.trialExpiresAt && user.trialExpiresAt > Date.now() && (
+                  <span className="bg-emerald-500/10 text-emerald-500 border border-emerald-500/20 px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest flex items-center gap-1.5 ml-2">
+                    <Timer className="w-3 h-3" /> TOUR MODE
+                  </span>
+                )}
               </div>
 
               <div className="flex-1 max-w-md mx-8 hidden md:block">
@@ -258,7 +317,22 @@ const App: React.FC = () => {
                 </div>
               </div>
 
-              <div className="flex items-center gap-4">
+              <div className="flex items-center gap-6">
+                {!user.isPro && (
+                  <div className="flex items-center gap-3">
+                    {user.trialExpiresAt && user.trialExpiresAt > Date.now() && (
+                       <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest bg-slate-900/50 px-3 py-1.5 rounded-lg border border-white/5">
+                         {getTrialRemainingText()}
+                       </span>
+                    )}
+                    <button 
+                      onClick={() => setShowSubscription(true)}
+                      className="hidden sm:flex items-center gap-2 px-4 py-2 bg-amber-500 hover:bg-amber-400 text-slate-900 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all shadow-lg shadow-amber-500/20"
+                    >
+                      <Crown className="w-3 h-3" /> {user.trialExpiresAt && user.trialExpiresAt > Date.now() ? 'Buy Pro' : 'Upgrade'}
+                    </button>
+                  </div>
+                )}
                 <div className="text-right hidden sm:block">
                   <p className="text-[8px] font-black text-emerald-500 uppercase tracking-widest leading-none">Status: Connected</p>
                   <p className="text-[10px] font-black text-white uppercase mt-1">{user.email.split('@')[0]}</p>
@@ -290,6 +364,20 @@ const App: React.FC = () => {
                     </button>
                   ))}
                 </div>
+                {!isProAccess && (
+                  <div className="max-w-md mx-auto pt-10">
+                    <div className="p-8 bg-amber-500/5 border border-amber-500/10 rounded-[2rem] text-center">
+                       <p className="text-[10px] font-black text-amber-500 uppercase tracking-[0.3em] mb-4">Limited Access Enabled</p>
+                       <p className="text-sm text-slate-400 font-medium leading-relaxed mb-6">Upgrade to Alpha Pro for ₹5,000/year or start a free 2-day website tour to unlock all features.</p>
+                       <button 
+                         onClick={() => setShowSubscription(true)}
+                         className="px-8 py-3 bg-amber-500 text-slate-900 rounded-xl font-black text-[10px] uppercase tracking-widest hover:scale-105 transition-transform"
+                       >
+                         Unlock Pro / Start Tour
+                       </button>
+                    </div>
+                  </div>
+                )}
               </div>
             )}
 
@@ -309,7 +397,7 @@ const App: React.FC = () => {
                     className="flex items-center gap-2 px-6 py-3 bg-emerald-500/10 hover:bg-emerald-500 text-emerald-500 hover:text-slate-900 border border-emerald-500/20 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all group"
                   >
                     <FileSpreadsheet className="w-4 h-4" />
-                    Export to Excel (.csv)
+                    {isProAccess ? 'Export to Excel (.csv)' : 'Export (Pro/Tour only)'}
                   </button>
                 </div>
 
@@ -381,7 +469,7 @@ const App: React.FC = () => {
                             className="flex items-center gap-2 px-8 py-4 bg-slate-900 hover:bg-slate-800 text-white border border-white/10 rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all"
                           >
                             <Download className="w-4 h-4 text-emerald-500" />
-                            Download Audit Report
+                            {isProAccess ? 'Download Audit Report' : 'Download (Pro/Tour only)'}
                           </button>
                         </div>
                       </div>
@@ -444,9 +532,5 @@ const App: React.FC = () => {
     </div>
   );
 };
-
-const Binoculars = (props: any) => (
-  <svg {...props} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M8 22a2 2 0 1 0 0-4 2 2 0 0 0 0 4Z"/><path d="M16 22a2 2 0 1 0 0-4 2 2 0 0 0 0 4Z"/><path d="M7 10V2a1 1 0 0 1 1-1h8a1 1 0 0 1 1 1v8"/><path d="M4 14V9a1 1 0 0 1 1-1h14a1 1 0 0 1 1 1v5"/><path d="M8 14h8"/><path d="M12 14v4"/><path d="M12 2v2"/><path d="M9 18l-3 4"/><path d="M15 18l3 4"/></svg>
-);
 
 export default App;

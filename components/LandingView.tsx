@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { Rocket, TrendingUp, ShieldCheck, Zap, Globe, BarChart3, ChevronRight, PieChart, Layers } from 'lucide-react';
+import { Rocket, TrendingUp, ShieldCheck, Zap, Globe, BarChart3, ChevronRight, PieChart, Layers, Crown } from 'lucide-react';
 
 interface LandingViewProps {
   onGetStarted: (mode: 'signin' | 'signup') => void;
@@ -17,9 +17,14 @@ const LandingView: React.FC<LandingViewProps> = ({ onGetStarted }) => {
         </div>
 
         <div className="max-w-5xl mx-auto text-center relative z-10">
+          <div className="inline-flex items-center gap-2 bg-amber-500/10 border border-amber-500/20 px-6 py-2 rounded-full mb-8">
+            <Crown className="w-4 h-4 text-amber-500" />
+            <span className="text-[10px] font-black text-amber-500 uppercase tracking-[0.3em]">PRO Terminal Now Active</span>
+          </div>
+
           <h1 className="text-6xl md:text-8xl font-black text-white tracking-tighter leading-tight mb-8 uppercase">
             Predicting the next <br/>
-            <span className="text-transparent bg-clip-text bg-gradient-to-r from-emerald-400 to-cyan-400">Multibagger</span>
+            <span className="text-transparent bg-clip-text bg-gradient-to-r from-emerald-400 to-cyan-400 italic">Multibagger</span>
           </h1>
           
           <p className="text-xl md:text-2xl text-slate-400 font-medium mb-12 max-w-3xl mx-auto leading-relaxed italic">
@@ -31,7 +36,7 @@ const LandingView: React.FC<LandingViewProps> = ({ onGetStarted }) => {
               onClick={() => onGetStarted('signup')}
               className="group bg-emerald-500 hover:bg-emerald-400 text-slate-900 px-10 py-5 rounded-2xl font-black text-lg uppercase tracking-widest transition-all shadow-2xl shadow-emerald-500/20 flex items-center gap-3"
             >
-              Sign Up
+              Start Analysis
               <ChevronRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
             </button>
             <button 
@@ -50,12 +55,47 @@ const LandingView: React.FC<LandingViewProps> = ({ onGetStarted }) => {
               { label: 'Uptime', val: '99.99%' }
             ].map((stat, i) => (
               <div key={i} className="text-center">
-                <div className="text-2xl font-black text-white">{stat.val}</div>
+                <div className="text-2xl font-black text-white font-mono">{stat.val}</div>
                 <div className="text-[9px] font-black text-slate-500 uppercase tracking-widest mt-1">{stat.label}</div>
               </div>
             ))}
           </div>
         </div>
+      </section>
+
+      {/* Pricing Section */}
+      <section className="py-20 px-6">
+         <div className="max-w-4xl mx-auto text-center bg-[#0a111a] border border-white/5 rounded-[4rem] p-16 shadow-2xl relative overflow-hidden">
+            <div className="absolute top-0 right-0 p-12 opacity-5">
+              <Crown className="w-64 h-64 text-amber-500" />
+            </div>
+            <h2 className="text-sm font-black text-amber-500 uppercase tracking-[0.4em] mb-4">Pricing Protocol</h2>
+            <h3 className="text-5xl font-black text-white uppercase italic tracking-tighter mb-8">Alpha Pro Yearly</h3>
+            <div className="text-7xl font-black text-white mb-10 font-mono">₹5,000<span className="text-xl text-slate-600 font-sans">/yr</span></div>
+            
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-x-12 gap-y-4 text-left max-w-2xl mx-auto mb-12">
+               {[
+                 "Full Excel/CSV Data Export",
+                 "Segment-Wise Deep Discovery",
+                 "15Y Growth Vectoring",
+                 "Exclusive Multi-Bagged Radar",
+                 "Institutional 14-Point Check",
+                 "Priority Neural Grounding"
+               ].map((f, i) => (
+                 <div key={i} className="flex items-center gap-3">
+                   <Check className="w-4 h-4 text-amber-500" />
+                   <span className="text-sm font-bold text-slate-400 uppercase tracking-tight">{f}</span>
+                 </div>
+               ))}
+            </div>
+
+            <button 
+              onClick={() => onGetStarted('signup')}
+              className="bg-amber-500 hover:bg-amber-400 text-slate-900 px-12 py-5 rounded-2xl font-black text-xl uppercase tracking-widest transition-all shadow-xl shadow-amber-500/20"
+            >
+              Get Started with Paytm
+            </button>
+         </div>
       </section>
 
       {/* Features Grid */}
@@ -131,5 +171,9 @@ const LandingView: React.FC<LandingViewProps> = ({ onGetStarted }) => {
     </div>
   );
 };
+
+const Check = (props: any) => (
+  <svg {...props} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="4" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+);
 
 export default LandingView;
