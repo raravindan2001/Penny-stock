@@ -13,6 +13,7 @@ export interface TrajectoryPoint {
   year: number;
   price: number;
   label: string;
+  isProjection?: boolean;
 }
 
 export interface FinancialMetric {
@@ -26,6 +27,10 @@ export interface DiscoveryStock {
   price: number;
   sector: string;
   potential: string;
+  exchange: 'NSE' | 'BSE';
+  segment?: string;
+  historicalCAGR?: string;
+  multibaggerScore?: number; // 1-100
 }
 
 export interface AnalysisResult {
@@ -40,11 +45,12 @@ export interface AnalysisResult {
   futureDeals: string[];
   investmentOpportunities: string[];
   sectorClassification: string;
+  lastUpdated: string;
 }
 
 export interface User {
-  phone: string;
+  email: string;
   name?: string;
 }
 
-export type PriceBucket = 'under20' | 'under50' | 'under100';
+export type PriceBucket = 'under20' | 'under50' | 'under100' | 'multibagger';

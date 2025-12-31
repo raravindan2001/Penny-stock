@@ -1,6 +1,6 @@
 {
-  "name": "Lau- PennyStocks - Growth Trajectory Analyst",
-  "description": "A high-performance financial dashboard for analyzing penny stock growth trajectories over 5, 10, and 15-year periods using AI-driven projections and real-time market sentiment.",
+  "name": "Lau- PennyStocks - NSE & BSE Trajectory Analyst",
+  "description": "A high-performance financial dashboard for analyzing penny stock growth trajectories across NSE and BSE markets using AI-driven projections and real-time sentiment.",
   "requestFramePermissions": [
     "geolocation"
   ]
