@@ -4,8 +4,10 @@
   "version": "1.0.0",
   "private": true,
   "type": "module",
+  "description": "Institutional Penny Stock Analysis Terminal optimized for Yarn",
   "scripts": {
     "dev": "vite",
+    "start": "vite",
     "build": "tsc && vite build",
     "preview": "vite preview"
   },
