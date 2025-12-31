@@ -2,24 +2,21 @@
 import { GoogleGenAI, Type } from "@google/genai";
 import { AnalysisResult, DiscoveryStock, PriceBucket } from "../types";
 
-/**
- * Service to discover penny stocks based on specific price buckets or growth potential.
- */
+const getAI = () => new GoogleGenAI({ apiKey: process.env.API_KEY || '' });
+
 export const discoverStocks = async (bucket: PriceBucket): Promise<DiscoveryStock[]> => {
-  const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+  const ai = getAI();
+  const prompt = `Act as an institutional research analyst. Find 10 high-potential Indian stocks (NSE/BSE) trading ${bucket === 'multibagger' ? 'with massive growth potential' : 'under ' + bucket.replace('under', '₹')}. 
+  Evaluate each ticker strictly against these 7 Identify Stocks 7 Step criteria:
+  1. P/E Ratio < 20
+  2. ROIC > 15%
+  3. Debt-to-Equity < 1
+  4. EPS 5Y CAGR > 10%
+  5. ROE > 15%
+  6. EBIT Margin > 10%
+  7. Gross Margin > 40%
   
-  let prompt = "";
-  if (bucket === 'multibagger') {
-    prompt = `Identify exactly 15-20 penny/small-cap stocks on NSE/BSE with extreme growth potential.
-    Target: Companies with a 5-year historical CAGR above 20% or high multibagger scores based on recent sector trends.
-    Price Target: Generally under ₹200.
-    Output data: Symbol, Name, LTP, Exchange, Segment, 5Y CAGR, and Growth Score.`;
-  } else {
-    const priceLimit = bucket === 'under20' ? 20 : bucket === 'under50' ? 50 : 100;
-    prompt = `Find 10 high-volume penny stocks on NSE/BSE currently trading below ₹${priceLimit}. 
-    Focus on sectors like EV, Green Energy, Infrastructure, and Defense.
-    Return the stock symbol, company name, current price, exchange, and a short potential summary.`;
-  }
+  Return JSON data including the 'passCount' (integer 0-7) indicating how many steps were satisfied.`;
 
   const response = await ai.models.generateContent({
     model: "gemini-3-flash-preview",
@@ -35,40 +32,40 @@ export const discoverStocks = async (bucket: PriceBucket): Promise<DiscoveryStoc
             symbol: { type: Type.STRING },
             name: { type: Type.STRING },
             price: { type: Type.NUMBER },
-            sector: { type: Type.STRING },
             exchange: { type: Type.STRING, enum: ['NSE', 'BSE'] },
-            segment: { type: Type.STRING },
-            potential: { type: Type.STRING },
-            historicalCAGR: { type: Type.STRING },
-            multibaggerScore: { type: Type.NUMBER }
+            passCount: { type: Type.INTEGER }
           },
-          required: ["symbol", "name", "price", "exchange", "potential"]
+          required: ["symbol", "name", "price", "exchange", "passCount"]
         }
       }
     }
   });
 
-  try {
-    return JSON.parse(response.text || "[]");
-  } catch (e) {
-    console.error("Market discovery error:", e);
-    return [];
-  }
+  return JSON.parse(response.text || "[]");
 };
 
-/**
- * Performs a deep-dive analysis of a specific ticker including 5, 10, and 15 year projections.
- */
 export const analyzeStock = async (symbol: string): Promise<AnalysisResult> => {
-  const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
-  const currentYear = new Date().getFullYear();
+  const ai = getAI();
   
-  const prompt = `Perform an exhaustive growth trajectory analysis for the Indian stock: "${symbol}".
-  1. Verify the current market price on NSE or BSE.
-  2. Analyze 5 years of historical data and provide accurate projections for 5, 10, and 15 years from now.
-  3. Evaluate operating margins, revenue velocity, and future catalyst deals.
-  4. Categorize based on specific growth sectors (e.g., EV Infra, Solar energy, Defense Tech).
-  Current year is ${currentYear}. Projections must be marked 'isProjection: true'.`;
+  const prompt = `Perform a deep institutional analysis for the Indian stock ticker: "${symbol}".
+  
+  SECTION 1: Identify Stocks 7 Step Validation. Provide precise values for:
+  - P/E Ratio
+  - ROIC (%)
+  - Debt-to-Equity Ratio
+  - EPS 5Y CAGR (%)
+  - ROE (%)
+  - EBIT Margin (%)
+  - Gross Margin (%)
+  
+  SECTION 2: Growth Trajectory Mapping.
+  Provide expected price targets for:
+  - Current (Real-time value)
+  - 5 Years
+  - 10 Years
+  - 15 Years
+  
+  Use search grounding for the most recent quarterly filings and annual reports. Return in JSON.`;
 
   const response = await ai.models.generateContent({
     model: "gemini-3-pro-preview",
@@ -81,22 +78,19 @@ export const analyzeStock = async (symbol: string): Promise<AnalysisResult> => {
         properties: {
           summary: { type: Type.STRING },
           verdict: { type: Type.STRING, enum: ['Bullish', 'Neutral', 'Bearish'] },
-          sectorClassification: { type: Type.STRING },
-          catalysts: { type: Type.ARRAY, items: { type: Type.STRING } },
-          risks: { type: Type.ARRAY, items: { type: Type.STRING } },
-          revenueGrowthQoQ: { type: Type.STRING },
-          futureDeals: { type: Type.ARRAY, items: { type: Type.STRING } },
-          investmentOpportunities: { type: Type.ARRAY, items: { type: Type.STRING } },
-          operatingMargins: {
-            type: Type.ARRAY,
-            items: {
-              type: Type.OBJECT,
-              properties: {
-                year: { type: Type.STRING },
-                value: { type: Type.NUMBER }
-              },
-              required: ["year", "value"]
-            }
+          sector: { type: Type.STRING },
+          metrics: {
+            type: Type.OBJECT,
+            properties: {
+              peRatio: { type: Type.NUMBER },
+              roic: { type: Type.NUMBER },
+              deRatio: { type: Type.NUMBER },
+              epsCAGR: { type: Type.NUMBER },
+              roe: { type: Type.NUMBER },
+              ebitMargin: { type: Type.NUMBER },
+              grossMargin: { type: Type.NUMBER }
+            },
+            required: ["peRatio", "roic", "deRatio", "epsCAGR", "roe", "ebitMargin", "grossMargin"]
           },
           trajectory: {
             type: Type.ARRAY,
@@ -110,30 +104,23 @@ export const analyzeStock = async (symbol: string): Promise<AnalysisResult> => {
               },
               required: ["year", "price", "label", "isProjection"]
             }
-          }
+          },
+          catalysts: { type: Type.ARRAY, items: { type: Type.STRING } },
+          risks: { type: Type.ARRAY, items: { type: Type.STRING } }
         },
-        required: ["summary", "verdict", "trajectory", "catalysts", "risks", "operatingMargins", "revenueGrowthQoQ", "futureDeals", "investmentOpportunities", "sectorClassification"]
+        required: ["summary", "verdict", "metrics", "trajectory", "catalysts", "risks", "sector"]
       }
     }
   });
 
-  // Extract real-world citations
-  const groundingChunks = response.candidates?.[0]?.groundingMetadata?.groundingChunks || [];
-  const sources = groundingChunks
-    .filter((chunk: any) => chunk.web)
-    .map((chunk: any) => ({
-      title: chunk.web.title,
-      uri: chunk.web.uri
-    }));
+  const sources = (response.candidates?.[0]?.groundingMetadata?.groundingChunks || [])
+    .filter((c: any) => c.web)
+    .map((c: any) => ({ title: c.web.title, uri: c.web.uri }));
 
-  try {
-    const data = JSON.parse(response.text || "{}");
-    return { 
-      ...data, 
-      sources, 
-      lastUpdated: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' }) 
-    };
-  } catch (e) {
-    throw new Error(`Technical failure analyzing ${symbol}. Please verify the ticker and try again.`);
-  }
+  const data = JSON.parse(response.text || "{}");
+  return {
+    ...data,
+    sources,
+    lastUpdated: new Date().toLocaleTimeString()
+  };
 };

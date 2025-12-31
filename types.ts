@@ -1,14 +1,4 @@
 
-export interface StockData {
-  symbol: string;
-  name: string;
-  currentPrice: number;
-  sector: string;
-  description: string;
-  marketCap: string;
-  riskScore: number;
-}
-
 export interface TrajectoryPoint {
   year: number;
   price: number;
@@ -16,41 +6,38 @@ export interface TrajectoryPoint {
   isProjection?: boolean;
 }
 
-export interface FinancialMetric {
-  year: string;
-  value: number;
+export interface SevenStepMetrics {
+  peRatio: number;
+  roic: number;
+  deRatio: number;
+  epsCAGR: number;
+  roe: number;
+  ebitMargin: number;
+  grossMargin: number;
+}
+
+export interface AnalysisResult {
+  summary: string;
+  verdict: 'Bullish' | 'Neutral' | 'Bearish';
+  metrics: SevenStepMetrics;
+  trajectory: TrajectoryPoint[];
+  catalysts: string[];
+  risks: string[];
+  sources: { title: string; uri: string }[];
+  lastUpdated: string;
+  sector: string;
 }
 
 export interface DiscoveryStock {
   symbol: string;
   name: string;
   price: number;
-  sector: string;
-  potential: string;
   exchange: 'NSE' | 'BSE';
-  segment?: string;
-  historicalCAGR?: string;
-  multibaggerScore?: number; // 1-100
-}
-
-export interface AnalysisResult {
-  summary: string;
-  trajectory: TrajectoryPoint[];
-  catalysts: string[];
-  risks: string[];
-  verdict: 'Bullish' | 'Neutral' | 'Bearish';
-  sources: { title: string; uri: string }[];
-  operatingMargins: FinancialMetric[];
-  revenueGrowthQoQ: string;
-  futureDeals: string[];
-  investmentOpportunities: string[];
-  sectorClassification: string;
-  lastUpdated: string;
+  passCount: number; // How many of the 7 steps it passes
 }
 
 export interface User {
   email: string;
-  name?: string;
 }
 
 export type PriceBucket = 'under20' | 'under50' | 'under100' | 'multibagger';
